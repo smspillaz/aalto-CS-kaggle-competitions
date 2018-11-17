@@ -1,3 +1,0 @@
-"""/init.py
-
-Entry point."""
