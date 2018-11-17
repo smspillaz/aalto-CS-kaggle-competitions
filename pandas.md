@@ -44,7 +44,7 @@ some data is not giving us any more useful information.
 How do we replace as the `nan` values? Use `df.fillna(0, inplace=True)`
 
 To aggregate features, use `.groupby`. Now, just like SQL we can take certain features for our
-grouped data and then calculate summary statistics: `df.groupby(['fooId'])['field1'].mean()
+grouped data and then calculate summary statistics: `df.groupby(['fooId'])['field1'].mean()`
 
 Seeing unique values of a feature: `df['foo'].unique()`. Useful for finding categories.
 
