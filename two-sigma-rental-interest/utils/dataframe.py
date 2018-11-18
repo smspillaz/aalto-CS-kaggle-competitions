@@ -93,7 +93,7 @@ def column_list_to_category_flags(data_frame, column, grams):
 
 
 def remap_column(data_frame, column, new_column, mapping):
-    data_frame[new_column] = data_frame[column].transform(lambda x: mapping[x])
+    data_frame[new_column] = data_frame[column].transform(mapping)
     return data_frame
 
 
