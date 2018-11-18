@@ -105,3 +105,30 @@ def remap_date_column_to_days_before(data_frame,
         lambda x: (reference_date - datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S")).days
     )
     return data_frame
+
+
+def map_categorical_column_to_category_ids(train_data_frame,
+                                           test_data_frame,
+                                           column,
+                                           new_column):
+    category_to_id_map = {
+        category: i
+        for i, category in enumerate(sorted(set(train_data_frame[column]) | set(test_data_frame[column])))
+    }
+    id_to_category_map = {
+        i: category
+        for category, i in category_to_id_map.items()
+    }
+
+    return (
+        category_to_id_map,
+        id_to_category_map,
+        remap_column(train_data_frame,
+                     column,
+                     new_column,
+                     category_to_id_map),
+        remap_column(test_data_frame,
+                     column,
+                     new_column,
+                     category_to_id_map)
+    )
