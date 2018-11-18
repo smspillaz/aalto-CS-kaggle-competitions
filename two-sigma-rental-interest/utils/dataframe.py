@@ -4,6 +4,7 @@ Utilities to clean out the data
 in the dataframe.
 """
 
+import datetime
 import itertools
 import json
 import numpy as np
@@ -88,4 +89,19 @@ def column_list_to_category_flags(data_frame, column, grams):
         for r in row_cleaned_categories
     ], columns=categories)
     
-    return pd.concat((data_frame, category_flags), axis=1).drop(column, axis=1)
+    return pd.concat((data_frame, category_flags), axis=1)
+
+
+def remap_to_float(data_frame, column, new_column, mapping):
+    data_frame[new_column] = data_frame[column].transform(lambda x: mapping[x])
+    return data_frame
+
+
+def remap_date_column_to_days_before(data_frame,
+                                     column,
+                                     new_column,
+                                     reference_date):
+    data_frame[new_column] = data_frame[column].transform(
+        lambda x: (reference_date - datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S")).days
+    )
+    return data_frame
