@@ -1,4 +1,5 @@
 git+git://github.com/dnouri/skorch.git@v0.4.0
+category-encoders==1.3.0
 dstoolbox==0.7.0
 numpy==1.15.3
 pandas==0.22.0
