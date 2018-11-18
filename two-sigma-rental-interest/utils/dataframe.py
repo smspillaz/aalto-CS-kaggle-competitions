@@ -110,10 +110,19 @@ def remap_date_column_to_days_before(data_frame,
 def map_categorical_column_to_category_ids(train_data_frame,
                                            test_data_frame,
                                            column,
-                                           new_column):
+                                           new_column,
+                                           min_freq=1):
+    category_counts = Counter(train_data_frame[column]) + Counter(test_data_frame[column])
+    category_to_unknown_mapping = {
+        category: category if count >= min_freq else "Unknown"
+        for category, count in category_counts.items()
+    }
     category_to_id_map = {
         category: i
-        for i, category in enumerate(sorted(set(train_data_frame[column]) | set(test_data_frame[column])))
+        for i, category in enumerate(sorted([
+            category_to_unknown_mapping[c] for c in
+            (set(train_data_frame[column]) | set(test_data_frame[column]))
+        ]))
     }
     id_to_category_map = {
         i: category
@@ -121,14 +130,15 @@ def map_categorical_column_to_category_ids(train_data_frame,
     }
 
     return (
+        category_to_unknown_mapping,
         category_to_id_map,
         id_to_category_map,
         remap_column(train_data_frame,
                      column,
                      new_column,
-                     category_to_id_map),
+                     lambda x: category_to_id_map[category_to_unknown_mapping[x]]),
         remap_column(test_data_frame,
                      column,
                      new_column,
-                     category_to_id_map)
+                     lambda x: category_to_id_map[category_to_unknown_mapping[x]])
     )
