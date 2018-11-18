@@ -1,5 +1,8 @@
+git+git://github.com/dnouri/skorch.git@v0.4.0
 numpy==1.15.3
 pandas==0.22.0
 scikit-learn==0.20.0
 spacy==2.0.16
+tabulate==0.8.2
 torch==1.0.0a0
+tqdm==4.23.4
