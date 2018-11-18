@@ -92,7 +92,7 @@ def column_list_to_category_flags(data_frame, column, grams):
     return pd.concat((data_frame, category_flags), axis=1)
 
 
-def remap_to_float(data_frame, column, new_column, mapping):
+def remap_column(data_frame, column, new_column, mapping):
     data_frame[new_column] = data_frame[column].transform(lambda x: mapping[x])
     return data_frame
 
