@@ -12,7 +12,7 @@ algorithms for hyperparameter search if we want to.
 import numpy as np
 
 from category_encoders import OneHotEncoder
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
@@ -28,11 +28,11 @@ def sklearn_pipeline_steps(categorical_columns, verbose=False):
     )
 
 
-def basic_linear_regression_pipeline(categorical_columns,
-                                     verbose=False):
+def basic_logistic_regression_pipeline(categorical_columns,
+                                       verbose=False):
     return Pipeline((
         *sklearn_pipeline_steps(categorical_columns, verbose=verbose),
-        ('linear', LinearRegression())
+        ('logistic', LogisticRegression())
     ))
 
 
@@ -50,10 +50,9 @@ def format_statistics(calculated_statistics):
     ])
 
 
-def round_to_class_accuracy(labels, predictions):
-    rounded_predictions = np.round(np.clip(predictions, 0.0, 1.0) * 2) / 2
+def prediction_accuracy(labels, predictions):
     return (
-        len([a for a in np.isclose(labels, rounded_predictions) if a == True]) / len(predictions)
+        len([a for a, b in zip(labels, predictions) if a == b]) / len(predictions)
     )
 
 
