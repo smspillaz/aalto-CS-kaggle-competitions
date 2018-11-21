@@ -10,6 +10,7 @@ algorithms for hyperparameter search if we want to.
 """
 
 import numpy as np
+import pandas as pd
 
 from category_encoders import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
@@ -94,5 +95,14 @@ def test_model_with_k_fold_cross_validation(model,
     return (
         calculate_statistics(statistics, test_labels, predictions),
         test_labels,
-        predictions
+        predictions,
+        model
     )
+
+
+def get_prediction_probabilities_with_columns(model,
+                                              test_dataframe,
+                                              keep_columns):
+    return pd.concat((test_dataframe[keep_columns],
+                      pd.DataFrame(model.predict_proba(test_dataframe.drop(keep_columns, axis=1)))),
+                     axis=1)
