@@ -167,7 +167,7 @@ def documents_to_vectors_model(train_documents,
                                                              character_to_one_hot), dtype=torch.long))
         for sentence in train_documents
     ], 200))
-    
+
     label_tensors = list(to_batches([maybe_cuda(torch.tensor(i)) for i in labels], 200))
 
     model = maybe_cuda(Doc2Vec(parameters,
@@ -188,7 +188,7 @@ def documents_to_vectors_model(train_documents,
             print("Interrupted, saving current state now")
     else:
         model.load_state_dict(torch.load(load))
-    
+
     if save:
         torch.save(model.state_dict(), save)
 
