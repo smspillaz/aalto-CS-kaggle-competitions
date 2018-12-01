@@ -204,10 +204,11 @@ def generate_document_vector_embeddings_from_model(model,
                                                              character_to_one_hot), dtype=torch.long))
         for sentence in sentences
     ], 200))
-    return np.row_stack([
-        model.sentence_embedding(sentence_tensor).view(-1, model.hidden_dim).cpu().numpy()
-        for sentence_tensor in sentence_tensors
-    ])
+    with torch.no_grad():
+        return np.row_stack([
+            model.sentence_embedding(sentence_tensor).view(-1, model.hidden_dim).detach().cpu().numpy()
+            for sentence_tensor in sentence_tensors
+        ])
 
 
 def column_to_doc_vectors(train_data_frame,
