@@ -45,9 +45,9 @@ def sliding_window(sequence, n):
     """Returns a sliding window of width n over data from sequence."""
     it = iter(sequence)
     window = deque((next(it, None) for _ in range(n)), maxlen=n)
-    
+
     yield list(window)
-    
+
     for element in it:
         window.append(element)
         yield list(window)
@@ -71,7 +71,7 @@ def remove_small_or_stopwords_from_ranking(ranking, nlp, min_len):
     for word, rank in ranking:
         if nlp.vocab[word].is_stop or len(word) < min_len:
             continue
-        
+
         yield word, rank
 
 
@@ -88,7 +88,7 @@ def column_list_to_category_flags(data_frame, column, grams):
         [1 if gram in r else 0 for gram in grams]
         for r in row_cleaned_categories
     ], columns=categories)
-    
+
     return pd.concat((data_frame, category_flags), axis=1)
 
 
