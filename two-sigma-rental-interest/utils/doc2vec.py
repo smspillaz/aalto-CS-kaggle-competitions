@@ -108,12 +108,11 @@ def train_model(model, optimizer, epochs, sentence_tensors, label_tensors):
 
         print('Epoch', epoch, 'total loss', total_loss)
 
-        if epoch % 10 == 0:
-            with torch.no_grad():
-                print("Model Accuracy:",
-                      compute_model_accuracy(model,
-                                             shuffled_sentence_tensors[0],
-                                             shuffled_label_tensors[0]))
+        with torch.no_grad():
+            print("Model Accuracy:",
+                  compute_model_accuracy(model,
+                                         shuffled_sentence_tensors[0],
+                                         shuffled_label_tensors[0]))
 
     return model
 
