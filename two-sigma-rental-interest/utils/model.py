@@ -33,7 +33,7 @@ def basic_logistic_regression_pipeline(categorical_columns,
                                        verbose=False):
     return Pipeline((
         *sklearn_pipeline_steps(categorical_columns, verbose=verbose),
-        ('logistic', LogisticRegression(multi_class='multinominal'))
+        ('logistic', LogisticRegression(multi_class='multinomial'))
     ))
 
 
