@@ -142,3 +142,34 @@ def map_categorical_column_to_category_ids(train_data_frame,
                      new_column,
                      lambda x: category_to_id_map[category_to_unknown_mapping[x]])
     )
+
+
+def remap_columns_with_transform(train_data_frame,
+                                 test_data_frame,
+                                 column,
+                                 new_column,
+                                 transform):
+    """Remove some columns with a transform."""
+    return (
+        remap_column(train_data_frame,
+                     column,
+                     new_column,
+                     transform),
+        remap_column(test_data_frame,
+                     column,
+                     new_column,
+                     transform)
+    )
+
+
+def normalize_description(description):
+    """Normalize the description field."""
+    description = description.lower()
+    description = re.sub(r"<[^<]+?(>|$)", " ", description)
+    description = re.sub(r"[0-9\-]+", " ", description)
+    description = re.sub(r"[a-z0-9]@[a-z0-9]\.[a-z]", " ", description)
+    description = re.sub(r"[\!]+", "! ", description)
+    description = re.sub(r"[\-\:]", " ", description)
+    description = re.sub("\*", " ", description)
+    return re.sub(r"\s+", " ", description)
+
