@@ -188,8 +188,6 @@ def numerical_feature_engineering_on_dataframe(dataframe,
         dataframe['{}_mul_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] * dataframe[rhs_column]
         dataframe['{}_div_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] / add_epsilon(dataframe[rhs_column])
         dataframe['{}_exp_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] ** dataframe[rhs_column]
-        dataframe['{}_log_{}'.format(lhs_column, rhs_column)] = np.log(add_epsilon(dataframe[lhs_column].as_matrix().astype('double')),
-                                                                       dataframe[rhs_column].as_matrix().astype('double'))
 
     return dataframe
 
