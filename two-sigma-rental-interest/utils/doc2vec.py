@@ -15,6 +15,7 @@ put the feedback into an appropriate vector space.
 
 import argparse
 import torch
+import math
 import numpy as np
 import pandas as pd
 import json
@@ -142,12 +143,17 @@ def pad_sentence(sentence, padding):
     return truncated + (" " * (padding - len(truncated)))
 
 
-def to_batches(sentences, batch_size):
-    for i in range(len(sentences) // batch_size):
-        yield torch.stack([
+def to_batches(sentences, batch_size, pad_value):
+    for i in range(math.ceil(len(sentences) / batch_size)):
+        batch = [
             sentences[i * batch_size + j]
-            for j in range(batch_size)
-        ], dim=0)
+            for j in range(min((batch_size, len(sentences[i * batch_size:]))))
+        ]
+        padding = [
+            pad_value
+            for k in range(max(0, batch_size - len(sentences[i * batch_size:])))
+        ]
+        yield torch.stack(batch + padding, dim=0)
 
 
 def documents_to_vectors_model(train_documents,
@@ -157,23 +163,27 @@ def documents_to_vectors_model(train_documents,
                                parameters,
                                learning_rate,
                                load=None,
-                               save=None):
+                               save=None,
+                               sentence_length=1000,
+                               batch_size=200):
     """Convert some documents to vectors based on labels."""
     character_to_one_hot, one_hot_to_character = characters_to_one_hot_lookups(
         "".join(train_documents) + "".join(test_documents)
     )
     train_sentence_tensors = list(to_batches([
-        maybe_cuda(torch.tensor(character_sequence_to_matrix(pad_sentence(sentence, 500),
+        maybe_cuda(torch.tensor(character_sequence_to_matrix(pad_sentence(sentence, sentence_length),
                                                              character_to_one_hot), dtype=torch.long))
         for sentence in train_documents
-    ], 200))
+    ], batch_size, maybe_cuda(torch.tensor([character_to_one_hot[" "] for i in range(sentence_length)]))))
 
-    label_tensors = list(to_batches([maybe_cuda(torch.tensor(i)) for i in labels], 200))
+    label_tensors = list(to_batches([maybe_cuda(torch.tensor(i)) for i in labels],
+                                    batch_size,
+                                    maybe_cuda(torch.tensor(0))))
 
     model = maybe_cuda(Doc2Vec(parameters,
                                parameters * 2,
                                len(character_to_one_hot.keys()), max(labels) + 1,
-                               200))
+                               batch_size))
 
     if not load:
         optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -197,18 +207,20 @@ def documents_to_vectors_model(train_documents,
 
 def generate_document_vector_embeddings_from_model(model,
                                                    character_to_one_hot,
-                                                   sentences):
+                                                   sentences,
+                                                   sentence_length,
+                                                   batch_size):
     # Generate the embeddings for all of our documents now
     sentence_tensors = list(to_batches([
-        maybe_cuda(torch.tensor(character_sequence_to_matrix(pad_sentence(sentence, 500),
+        maybe_cuda(torch.tensor(character_sequence_to_matrix(pad_sentence(sentence, sentence_length),
                                                              character_to_one_hot), dtype=torch.long))
         for sentence in sentences
-    ], 200))
+    ], batch_size, maybe_cuda(torch.tensor([character_to_one_hot[" "] for i in range(sentence_length)]))))
     with torch.no_grad():
         return np.row_stack([
-            model.sentence_embedding(sentence_tensor).view(-1, model.hidden_dim).detach().cpu().numpy()
+            model.sentence_embedding(sentence_tensor).detach().cpu().numpy()
             for sentence_tensor in sentence_tensors
-        ])
+        ]).reshape(-1, model.hidden_dim * 2)[:len(sentences)]
 
 
 def column_to_doc_vectors(train_data_frame,
@@ -220,7 +232,9 @@ def column_to_doc_vectors(train_data_frame,
                           parameters=40,
                           learning_rate=0.01,
                           load=None,
-                          save=None):
+                          save=None,
+                          sentence_length=1000,
+                          batch_size=200):
     """Convert some description columns to document vector columns."""
     train_descriptions = list(train_data_frame[description_column])
     test_descriptions = list(test_data_frame[description_column])
@@ -234,14 +248,18 @@ def column_to_doc_vectors(train_data_frame,
         parameters,
         learning_rate,
         load=load,
-        save=save
+        save=save,
+        sentence_length=sentence_length,
+        batch_size=batch_size
     )
 
     train_description_vectors = pd.DataFrame(
         generate_document_vector_embeddings_from_model(
             model,
             character_to_one_hot,
-            train_descriptions
+            train_descriptions,
+            sentence_length,
+            batch_size
         )
     )
 
@@ -249,7 +267,9 @@ def column_to_doc_vectors(train_data_frame,
         generate_document_vector_embeddings_from_model(
             model,
             character_to_one_hot,
-            test_descriptions
+            test_descriptions,
+            sentence_length,
+            batch_size
         )
     )
 
