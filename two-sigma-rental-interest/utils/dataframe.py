@@ -283,7 +283,6 @@ def count_json_column(dataframe, column):
     return pd.DataFrame([
         len(c) for c in dataframe[column]
     ])
-    return datafra
 
 
 def count_json(train_data_frame,
