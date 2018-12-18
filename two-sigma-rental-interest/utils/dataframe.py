@@ -290,7 +290,7 @@ def count_json(train_data_frame,
                column):
     train_data_frame["{}_count".format(column)] = count_json_column(train_data_frame,
                                                                     column)
-    test_data_frame["{}_count".format(column)] = count_json_column(train_data_frame,
+    test_data_frame["{}_count".format(column)] = count_json_column(test_data_frame,
                                                                    column)
 
     return train_data_frame, test_data_frame
