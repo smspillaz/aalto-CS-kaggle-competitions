@@ -173,3 +173,33 @@ def normalize_description(description):
     description = re.sub("\*", " ", description)
     return re.sub(r"\s+", " ", description)
 
+
+def add_epsilon(array):
+    return np.array([a + 10e-10 if a == 0 else a for a in array])
+
+
+def numerical_feature_engineering_on_dataframe(dataframe,
+                                               numerical_columns):
+    """Do per-dataframe feature engineering."""
+    for lhs_column, rhs_column in itertools.combinations(numerical_columns, 2):
+        dataframe['{}_add_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] + dataframe[rhs_column]
+        dataframe['{}_sub_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] - dataframe[rhs_column]
+        dataframe['{}_mul_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] * dataframe[rhs_column]
+        dataframe['{}_div_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] / add_epsilon(dataframe[rhs_column])
+        dataframe['{}_exp_{}'.format(lhs_column, rhs_column)] = dataframe[lhs_column] ** dataframe[rhs_column]
+        dataframe['{}_log_{}'.format(lhs_column, rhs_column)] = np.log(add_epsilon(dataframe[lhs_column].as_matrix().astype('double')),
+                                                                       dataframe[rhs_column].as_matrix().astype('double'))
+
+    return dataframe
+
+
+def numerical_feature_engineering(train_data_frame,
+                                  test_data_frame,
+                                  numerical_columns):
+    """Add, subtract, divide, multiply, exponentiate and take log."""
+    return (
+        numerical_feature_engineering_on_dataframe(train_data_frame,
+                                                   numerical_columns),
+        numerical_feature_engineering_on_dataframe(test_data_frame,
+                                                   numerical_columns),
+    )
