@@ -87,11 +87,13 @@ def train_model(model, optimizer, epochs, sentence_tensors, label_tensors):
             sentence_tensors, label_tensors
         )
 
-        for sentence_tensor, label_tensor in tqdm(
+        progressable_tensors = tqdm(
             zip(shuffled_sentence_tensors, shuffled_label_tensors),
             total=len(shuffled_label_tensors),
             desc="Processing sentence vectors"
-        ):
+        )
+
+        for sentence_tensor, label_tensor in progressable_tensors:
             optimizer.zero_grad()
 
             preds = model(sentence_tensor)
@@ -102,8 +104,9 @@ def train_model(model, optimizer, epochs, sentence_tensors, label_tensors):
             optimizer.step()
 
             total_loss += loss.item()
+            progressable_tensors.set_postfix(loss=loss.item())
 
-        print('Epoch', epoch, 'loss', total_loss)
+        print('Epoch', epoch, 'total loss', total_loss)
 
         if epoch % 10 == 0:
             with torch.no_grad():
