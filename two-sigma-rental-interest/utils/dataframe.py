@@ -5,6 +5,7 @@ in the dataframe.
 """
 
 import datetime
+import functools
 import itertools
 import json
 import numpy as np
@@ -203,3 +204,97 @@ def numerical_feature_engineering(train_data_frame,
         numerical_feature_engineering_on_dataframe(test_data_frame,
                                                    numerical_columns),
     )
+
+
+def normalize_eastwest(eastwest):
+    eastwest = eastwest.lower().strip()
+
+    if not eastwest:
+        return ""
+
+    if eastwest[0] == "e":
+        return "e"
+    elif eastwest[0] == "w":
+        return "w"
+    else:
+        return ""
+
+
+STREET_MAPPING = {
+    "st": "street",
+    "ave": "avenue",
+    "pl": "place",
+    "rd": "road"
+}
+
+
+def normalize_name(name):
+    m = re.match(r"(?P<address>[\w\s]+)(?P<st>st|street|ave|avenue|place|pl|road|rd).*",
+                 name.lower().strip())
+
+    if not m:
+        return name.lower().strip()
+
+    return "{address} {street}".format(
+        address=m.groupdict()["address"].strip(),
+        street=STREET_MAPPING.get(m.groupdict()["st"], m.groupdict()["st"])
+    )
+
+
+def normalize_address(address_dict):
+    return "{eastwest} {name}".format(
+        eastwest=normalize_eastwest(address_dict["eastwest"] or ""),
+        name=normalize_name(address_dict["name"] or "")
+    )
+
+
+def parse_address_components_from_address(address):
+    m = re.match(r"(?P<number>[0-9]*\s+)?\s*(?P<eastwest>East|West|E\s|W\s)?\s*(?P<name>[A-Za-z0-9\.\-\s]*)",
+                 normalize_whitespace(address),
+                 flags=re.IGNORECASE)
+    return {
+        "normalized": normalize_address(m.groupdict()) if m is not None else address
+    }
+
+
+def parse_address_components_for_column(dataframe, column):
+    return pd.concat((dataframe, pd.DataFrame.from_records([
+        {
+            "{}_{}".format(column, key): value for key, value in
+            parse_address_components_from_address(cell).items()
+        }
+        for cell in dataframe[column]
+    ])), axis=1)
+
+
+def parse_address_components(train_data_frame,
+                             test_data_frame,
+                             columns):
+    return (
+        functools.reduce(lambda df, c: parse_address_components_for_column(df,
+                                                                           c),
+                         columns,
+                         train_data_frame),
+        functools.reduce(lambda df, c: parse_address_components_for_column(df,
+                                                                           c),
+                         columns,
+                         test_data_frame)
+    )
+
+
+def count_json_column(dataframe, column):
+    return pd.DataFrame([
+        len(c) for c in dataframe[column]
+    ])
+    return datafra
+
+
+def count_json(train_data_frame,
+               test_data_frame,
+               column):
+    train_data_frame["{}_count".format(column)] = count_json_column(train_data_frame,
+                                                                    column)
+    test_data_frame["{}_count".format(column)] = count_json_column(train_data_frame,
+                                                                   column)
+
+    return train_data_frame, test_data_frame
