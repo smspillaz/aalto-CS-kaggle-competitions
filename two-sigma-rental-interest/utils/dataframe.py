@@ -16,6 +16,7 @@ import re
 import spacy
 
 from collections import Counter, deque
+from imblearn.over_sampling import RandomOverSampler
 
 
 def string_to_category_name(string):
@@ -294,3 +295,28 @@ def count_json(train_data_frame,
                                                                    column)
 
     return train_data_frame, test_data_frame
+
+
+def random_oversample_dataframe(train_dataframe):
+    """Oversample the dataframe using RandomOverSampler.
+
+    This works on non-numerical data but doesn't do any synethetic
+    data generation.
+    """
+    return pd.DataFrame(
+        RandomOverSampler().fit_resample(train_dataframe, train_dataframe["label_interest_level"])[0],
+        columns=train_dataframe.columns
+    )
+
+
+def drop_column_if_present(drop_columns, dataframe):
+    columns = set(dataframe.columns)
+    return dataframe.drop([d for d in drop_columns if d in columns], axis=1)
+
+
+def drop_columns_from_dataframes(drop_columns, train_dataframe, test_dataframe):
+    return (
+        drop_column_if_present(drop_columns, train_dataframe),
+        drop_column_if_present(drop_columns, test_dataframe)
+    )
+
