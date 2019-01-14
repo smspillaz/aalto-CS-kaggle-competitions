@@ -67,7 +67,7 @@ data_lm = (TextList.from_df(pd.concat([TRAIN_DF,
             .databunch(bs=bs))
 data_lm.save('tmp_lm')
 
-data_lm = TextLMDataBunch.load('data_lm', 'tmp_lm', bs=bs)
+data_lm = TextLMDataBunch.load('renthop_lm', 'tmp_lm', bs=bs)
 
 import pickle
 with open('vocab.pkl', 'wb') as f:
