@@ -107,3 +107,18 @@ def get_prediction_probabilities_with_columns(model,
     return pd.concat((test_dataframe[keep_columns],
                       pd.DataFrame(model.predict_proba(test_dataframe.drop(keep_columns, axis=1)))),
                      axis=1)
+
+
+def rescale_features_and_split_into_continuous_and_categorical(features_train_dataframe,
+                                                               features_test_dataframe,
+                                                               categorical_columns):
+    return (
+        StandardScaler().fit_transform(features_train_dataframe.drop(['listing_id',
+                                                                      'label_interest_level'] + categorical_columns,
+                                                                     axis=1)),
+        features_train_dataframe[categorical_columns],
+        StandardScaler().fit_transform(features_test_dataframe.drop(['listing_id',
+                                                                     'label_interest_level'] + categorical_columns,
+                                                                     axis=1)),
+        features_test_dataframe[categorical_columns]
+    )
