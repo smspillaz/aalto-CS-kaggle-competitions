@@ -49,6 +49,9 @@ def chars_to_one_hot_lookups(all_characters):
     return set_to_one_hot_lookups(sorted_chars_set)
 
 
+def tokens_to_one_hot_lookups(tokens):
+    return set_to_one_hot_lookups(sorted(set(tokens) | set([PAD_TOKEN, EOS_TOKEN])))
+
 def to_words(seq):
     return [str(s) for s in seq]
 
@@ -75,6 +78,12 @@ def descriptions_to_char_sequences(descriptions, char_to_one_hot):
         for s in descriptions
     ]
 
+def descriptions_to_token_sequences(tokens, token_to_one_hot):
+    return [
+        [token_to_one_hot[t] for t in s] + [token_to_one_hot[EOS_TOKEN]]
+        for s in tokens
+    ]
+
 def longest_sequence(sequences):
     return max([
         len(s) for s in sequences
@@ -92,15 +101,31 @@ def pad_sequences(sequences, max_len, pad_token):
     ], [len(s) for s in sequences]
 
 
-def generate_description_sequences(train_descriptions,
-                                   test_descriptions,
-                                   dictionary_encoder,
-                                   sequence_encoder):
+def token_dictionary_seq_encoder(train_descriptions, test_descriptions):
+    tokenizer = Tokenizer(tok_func=SpacyTokenizer)
+
+    tokenized_train_descriptions = tokenizer.process_all(train_descriptions)
+    tokenized_test_descriptions = tokenizer.process_all(test_descriptions)
+
+    tokens_to_one_hot, one_hot_to_tokens = tokens_to_one_hot_lookups(
+        list(itertools.chain.from_iterable(tokenized_train_descriptions + tokenized_test_descriptions))
+    )
+    return (
+        tokens_to_one_hot,
+        one_hot_to_tokens,
+        descriptions_to_token_sequences(tokenized_train_descriptions, tokens_to_one_hot),
+        descriptions_to_token_sequences(tokenized_test_descriptions, tokens_to_one_hot)
+    )
+
+
+def generate_description_sequences(train_description,
+                                   test_description,
+                                   dictionary_seq_encoder):
     """Given some train_descriptions and test_descriptions, encode as padded tensors."""
-    atom_to_one_hot, one_hot_to_atom = dictionary_encoder(' '.join(train_descriptions) +
-                                                          ' '.join(test_descriptions))
-    train_sequences = sequence_encoder(train_descriptions, atom_to_one_hot)
-    test_sequences = sequence_encoder(test_descriptions, atom_to_one_hot)
+    atom_to_one_hot, one_hot_to_atom, train_sequences, test_sequences = dictionary_seq_encoder(
+        train_description,
+        test_description,
+    )
 
     max_sequence_len = max([longest_sequence(train_sequences),
                             longest_sequence(test_sequences)])
@@ -110,8 +135,8 @@ def generate_description_sequences(train_descriptions,
     train_sequences, train_sequences_lengths = zip(*reversed(sorted(zip(train_sequences,
                                                                         train_sequences_lengths),
                                                    key=lambda t: t[1])))
-    test_sequences, test_sequences_lengths = zip(*reversed(sorted(zip(train_sequences,
-                                                                      train_sequences_lengths),
+    test_sequences, test_sequences_lengths = zip(*reversed(sorted(zip(test_sequences,
+                                                                      test_sequences_lengths),
                                                  key=lambda t: t[1])))
 
     return (atom_to_one_hot,
