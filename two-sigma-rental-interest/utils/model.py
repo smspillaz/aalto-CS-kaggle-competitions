@@ -96,7 +96,9 @@ def fit_one_split(model, features, labels, statistics, train_index, test_index):
     return (
         test_labels,
         predictions,
-        calculate_statistics(statistics, test_labels, predictions)
+        calculate_statistics(statistics,
+                             test_labels.values,
+                             predictions)
     )
 
 
