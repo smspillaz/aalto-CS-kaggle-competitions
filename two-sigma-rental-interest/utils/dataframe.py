@@ -115,13 +115,13 @@ def map_categorical_column_to_category_ids(column,
                                            min_freq=1):
     categories = list(itertools.chain.from_iterable([
         df[column] for df in dataframes
-    ])) + ["Unknown"]
+    ]))
     category_counts = Counter(categories)
     category_to_unknown_mapping = {
         category: category if count >= min_freq else "Unknown"
         for category, count in category_counts.items()
     }
-    categories_set = set(categories)
+    categories_set = set([category_to_unknown_mapping[c] for c in categories])
     category_to_id_map = {
         category: i
         for i, category in enumerate(sorted(categories_set))
