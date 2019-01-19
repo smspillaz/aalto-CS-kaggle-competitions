@@ -28,10 +28,12 @@ class SimpleRNNPredictor(nn.Module):
                  dictionary_dimension,
                  encoder_dimension,
                  hidden_dimension,
-                 output_dimension):
+                 output_dimension,
+                 dropout=0.05):
         """Initialize and set up layers."""
         super().__init__()
 
+        self.dropout = dropout
         self.n_layers = layers
         self.hidden_dimension = hidden_dimension
         self.word_encoder = nn.Embedding(dictionary_dimension, encoder_dimension)
@@ -40,7 +42,7 @@ class SimpleRNNPredictor(nn.Module):
                            num_layers=layers,
                            bidirectional=True,
                            batch_first=True,
-                           dropout=0.05)
+                           dropout=self.dropout)
 
         self.class_decoder1 = nn.Linear(hidden_dimension * 2 * layers,
                                         128)
@@ -82,10 +84,12 @@ class SimpleRNNTabularDataPredictor(nn.Module):
                  dictionary_dimension,
                  continuous_features_dimension,
                  categorical_feature_embedding_dimensions,
-                 output_dimension):
+                 output_dimension,
+                 dropout=0.05):
         """Initialize and set up layers."""
         super().__init__()
 
+        self.dropout = dropout
         self.n_layers = layers
         self.hidden_dimension = hidden_dimension
         self.word_encoder = nn.Embedding(dictionary_dimension, encoder_dimension)
@@ -100,7 +104,7 @@ class SimpleRNNTabularDataPredictor(nn.Module):
                            num_layers=layers,
                            bidirectional=True,
                            batch_first=True,
-                           dropout=0.05)
+                           dropout=self.dropout)
 
         total_embeddings_dimension = sum([e for _, e in categorical_feature_embedding_dimensions])
         self.class_decoder1 = nn.Linear(total_embeddings_dimension +
@@ -137,8 +141,8 @@ class SimpleRNNTabularDataPredictor(nn.Module):
 
         hidden = hidden.view(hidden.shape[1], hidden.shape[2] * 2 * self.n_layers)
         features = torch.cat((hidden, input_features_continuous, categorical_embeddings), dim=1)
-        decoded = F.dropout(F.relu(self.class_decoder1(features)), 0.05)
-        decoded = F.dropout(F.relu(self.class_decoder2(decoded)), 0.05)
+        decoded = F.dropout(torch.sigmoid(self.class_decoder1(features)), self.dropout)
+        decoded = F.dropout(torch.sigmoid(self.class_decoder2(decoded)), self.dropout)
         decoded = self.class_decoder3(decoded)
         return F.log_softmax(decoded, dim=-1)
 
