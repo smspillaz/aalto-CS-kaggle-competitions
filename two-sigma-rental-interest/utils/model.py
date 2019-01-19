@@ -14,7 +14,7 @@ import pandas as pd
 import xgboost as xgb
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import accuracy_score, mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
@@ -83,9 +83,7 @@ def format_statistics(calculated_statistics):
 
 
 def prediction_accuracy(labels, predictions):
-    return (
-        len([a for a, b in zip(labels, predictions) if a == b]) / len(predictions)
-    )
+    return accuracy_score(labels, np.argmax(predictions, axis=1))
 
 
 def fit_one_split(model, features, labels, statistics, train_index, test_index):
