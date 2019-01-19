@@ -1,5 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
 from tqdm import tqdm_notebook as tqdm
@@ -114,7 +116,7 @@ class BertForSequenceClassification(PreTrainedBertModel):
         features = self.dropout(features)
         logits = self.classifier(features)
 
-        return logits
+        return F.log_softmax(logits, dim=-1)
 
 
 def create_bert_model(num_labels):
@@ -208,7 +210,7 @@ class BertForSequenceClassificationWithTabularData(PreTrainedBertModel):
         features = self.dropout(features)
         logits = self.classifier(features)
 
-        return logits
+        return F.log_softmax(logits, dim=-1)
 
 
 def create_bert_model_with_tabular_features(continuous_features_dimension,
@@ -294,4 +296,12 @@ class BertClassifier(NeuralNetClassifier):
         ]
         args = [optimizer_parameters]
         return args, kwargs
+
+    def predict_proba(self, X):
+        """Exponentiate the predicted probabilities.
+
+        I don't know why the base model doesn't do this, especially
+        since the base loss function is NLLLoss.
+        """
+        return np.exp(super().predict_proba(X))
 
