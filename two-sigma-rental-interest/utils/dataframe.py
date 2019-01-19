@@ -109,58 +109,52 @@ def remap_date_column_to_days_before(data_frame,
     return data_frame
 
 
-def map_categorical_column_to_category_ids(train_data_frame,
-                                           test_data_frame,
-                                           column,
+def map_categorical_column_to_category_ids(column,
                                            new_column,
+                                           *dataframes,
                                            min_freq=1):
-    category_counts = Counter(train_data_frame[column]) + Counter(test_data_frame[column])
+    categories = list(itertools.chain.from_iterable([
+        df[column] for df in dataframes
+    ])) + ["Unknown"]
+    category_counts = Counter(categories)
     category_to_unknown_mapping = {
         category: category if count >= min_freq else "Unknown"
         for category, count in category_counts.items()
     }
+    categories_set = set(categories)
     category_to_id_map = {
         category: i
-        for i, category in enumerate(sorted(set([
-            category_to_unknown_mapping[c] for c in
-            (set(train_data_frame[column]) | set(test_data_frame[column]))
-        ])))
+        for i, category in enumerate(sorted(categories_set))
     }
     id_to_category_map = {
         i: category
         for category, i in category_to_id_map.items()
     }
 
-    return (
+    return ((
         category_to_unknown_mapping,
         category_to_id_map,
-        id_to_category_map,
-        remap_column(train_data_frame,
-                     column,
-                     new_column,
-                     lambda x: category_to_id_map[category_to_unknown_mapping[x]]),
-        remap_column(test_data_frame,
+        id_to_category_map
+    ), (
+        remap_column(df,
                      column,
                      new_column,
                      lambda x: category_to_id_map[category_to_unknown_mapping[x]])
-    )
+        for df in dataframes
+    ))
 
 
-def remap_columns_with_transform(train_data_frame,
-                                 test_data_frame,
-                                 column,
+def remap_columns_with_transform(column,
                                  new_column,
-                                 transform):
+                                 transform,
+                                 *dataframes):
     """Remove some columns with a transform."""
     return (
-        remap_column(train_data_frame,
-                     column,
-                     new_column,
-                     transform),
-        remap_column(test_data_frame,
+        remap_column(df,
                      column,
                      new_column,
                      transform)
+        for df in dataframes
     )
 
 
@@ -192,15 +186,12 @@ def numerical_feature_engineering_on_dataframe(dataframe,
     return dataframe
 
 
-def numerical_feature_engineering(train_data_frame,
-                                  test_data_frame,
-                                  numerical_columns):
+def numerical_feature_engineering(numerical_columns, *dataframes):
     """Add, subtract, divide, multiply, exponentiate and take log."""
     return (
-        numerical_feature_engineering_on_dataframe(train_data_frame,
-                                                   numerical_columns),
-        numerical_feature_engineering_on_dataframe(test_data_frame,
-                                                   numerical_columns),
+        numerical_feature_engineering_on_dataframe(df,
+                                                   numerical_columns)
+        for df in dataframes
     )
 
 
@@ -265,47 +256,36 @@ def parse_address_components_for_column(dataframe, column):
     ])), axis=1)
 
 
-def parse_address_components(train_data_frame,
-                             test_data_frame,
-                             columns):
+def parse_address_components(columns, *dataframes):
     return (
         functools.reduce(lambda df, c: parse_address_components_for_column(df,
                                                                            c),
                          columns,
-                         train_data_frame),
-        functools.reduce(lambda df, c: parse_address_components_for_column(df,
-                                                                           c),
-                         columns,
-                         test_data_frame)
+                         df)
+        for df in dataframes
     )
 
 
-def count_json_column(dataframe, column):
-    return pd.DataFrame([
-        len(c) for c in dataframe[column]
-    ])
+def count_json(json_data):
+    return len(json_data)
 
 
-def count_json(train_data_frame,
-               test_data_frame,
-               column):
-    train_data_frame["{}_count".format(column)] = count_json_column(train_data_frame,
-                                                                    column)
-    test_data_frame["{}_count".format(column)] = count_json_column(test_data_frame,
-                                                                   column)
-
-    return train_data_frame, test_data_frame
+def count_json_in_dataframes(column, *dataframes):
+    return remap_columns_with_transform(column,
+                                        "{}_count".format(column),
+                                        count_json,
+                                        *dataframes)
 
 
-def random_oversample_dataframe(train_dataframe):
+def random_oversample_dataframe(dataframe):
     """Oversample the dataframe using RandomOverSampler.
 
     This works on non-numerical data but doesn't do any synethetic
     data generation.
     """
     return pd.DataFrame(
-        RandomOverSampler().fit_resample(train_dataframe, train_dataframe["label_interest_level"])[0],
-        columns=train_dataframe.columns
+        RandomOverSampler().fit_resample(dataframe, dataframe["label_interest_level"])[0],
+        columns=dataframe.columns
     )
 
 
@@ -314,9 +294,9 @@ def drop_column_if_present(drop_columns, dataframe):
     return dataframe.drop([d for d in drop_columns if d in columns], axis=1)
 
 
-def drop_columns_from_dataframes(drop_columns, train_dataframe, test_dataframe):
+def drop_columns_from_dataframes(drop_columns, *dataframes):
     return (
-        drop_column_if_present(drop_columns, train_dataframe),
-        drop_column_if_present(drop_columns, test_dataframe)
+        drop_column_if_present(drop_columns, df)
+        for df in dataframes
     )
 

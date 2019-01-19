@@ -9,6 +9,7 @@ sklearn estimator API, so we can use them with grid search/evolutionary
 algorithms for hyperparameter search if we want to.
 """
 
+import itertools
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -149,36 +150,21 @@ def write_predictions_table_to_csv(predictions_table, csv_path):
     predictions_table.to_csv(csv_path, columns=['listing_id', 'high', 'medium', 'low'], index=False)
 
 
-def split_into_continuous_and_categorical(features_train_dataframe,
-                                          features_test_dataframe,
-                                          categorical_columns):
-    return (
-        features_train_dataframe.drop(['listing_id',
-                                       'label_interest_level'] + categorical_columns,
-                                      axis=1).values,
-        features_train_dataframe[categorical_columns].values,
-        features_test_dataframe.drop(['listing_id',
-                                      'label_interest_level'] + categorical_columns,
-                                     axis=1).values,
-        features_test_dataframe[categorical_columns].values
-    )
+def split_into_continuous_and_categorical(categorical_columns, *dataframes):
+    return tuple([
+        (df.drop(['listing_id', 'label_interest_level'] + categorical_columns, axis=1).values,
+         df[categorical_columns].values)
+        for df in dataframes
+    ])
 
 
-def rescale_features_and_split_into_continuous_and_categorical(features_train_dataframe,
-                                                               features_test_dataframe,
-                                                               categorical_columns):
-    (train_continuous,
-     train_categorical,
-     test_continuous,
-     test_categorical) = split_into_continuous_and_categorical(features_train_dataframe,
-                                                               features_test_dataframe,
-                                                               categorical_columns)
-
+def rescale_features_and_split_into_continuous_and_categorical(categorical_columns,
+                                                               *dataframes):
+    split_dfs = split_into_continuous_and_categorical(categorical_columns, *dataframes)
     scaler = StandardScaler()
 
-    return (
-        scaler.fit_transform(train_continuous),
-        train_categorical,
-        scaler.fit_transform(test_continuous),
-        test_categorical
-    )
+    return tuple([
+        (scaler.fit_transform(continuous), categorical)
+        for continuous, categorical in split_dfs
+    ])
+

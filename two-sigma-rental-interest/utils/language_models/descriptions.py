@@ -7,6 +7,10 @@ from sklearn.model_selection import train_test_split
 from fastai.text import Tokenizer, SpacyTokenizer
 from torchtext import data
 
+from utils.dataframe import (
+    normalize_description,
+    remap_columns_with_transform
+)
 
 PAD_TOKEN = '<PAD>'
 EOS_TOKEN = '<EOS>'
@@ -100,71 +104,65 @@ def pad_sequences(sequences, max_len, pad_token):
                                                 fillvalue=pad_token)
         ]
         for s in sequences
-    ], [len(s) for s in sequences]
+    ], np.array([len(s) for s in sequences])
 
 
-def token_dictionary_seq_encoder(train_descriptions, test_descriptions):
+def token_dictionary_seq_encoder(*sequences):
     tokenizer = Tokenizer(tok_func=SpacyTokenizer)
 
-    tokenized_train_descriptions = tokenizer.process_all(train_descriptions)
-    tokenized_test_descriptions = tokenizer.process_all(test_descriptions)
+    tokenized_sequences = [tokenizer.process_all(s) for s in sequences]
 
     tokens_to_one_hot, one_hot_to_tokens = tokens_to_one_hot_lookups(
-        list(itertools.chain.from_iterable(tokenized_train_descriptions + tokenized_test_descriptions))
+        list(itertools.chain.from_iterable(itertools.chain.from_iterable(tokenized_sequences)))
     )
-    return (
+
+    return ((
         tokens_to_one_hot,
-        one_hot_to_tokens,
-        descriptions_to_token_sequences(tokenized_train_descriptions, tokens_to_one_hot),
-        descriptions_to_token_sequences(tokenized_test_descriptions, tokens_to_one_hot)
+        one_hot_to_tokens
+    ), tuple(
+        descriptions_to_token_sequences(s, tokens_to_one_hot)
+        for s in tokenized_sequences
+    ))
+
+
+def reverse_sort_by_length(sequences, lengths):
+    """Given two lists of sequences and corresponding lengths, sort descending."""
+    return list(zip(*reversed(sorted(list(zip(sequences, lengths)),
+                                     key=lambda t: t[1]))))
+
+
+def generate_description_sequences(dictionary_seq_encoder, *sequences):
+    """Given some_descriptions, encode as padded tensors."""
+    (atom_to_one_hot, one_hot_to_atom), encoded = dictionary_seq_encoder(*sequences)
+
+    max_sequence_len = max([longest_sequence(s) for s in encoded])
+    padded_sequences_and_lengths = [
+        reverse_sort_by_length(*pad_sequences(sequences, max_sequence_len, atom_to_one_hot[PAD_TOKEN]))
+        for sequences in encoded
+    ]
+
+    return (
+        (atom_to_one_hot,
+         one_hot_to_atom),
+        (
+            (torch.tensor(s).long(), torch.tensor(l).long())
+            for s, l in padded_sequences_and_lengths
+        )
     )
 
 
-def generate_description_sequences(train_description,
-                                   test_description,
-                                   dictionary_seq_encoder):
-    """Given some train_descriptions and test_descriptions, encode as padded tensors."""
-    atom_to_one_hot, one_hot_to_atom, train_sequences, test_sequences = dictionary_seq_encoder(
-        train_description,
-        test_description,
-    )
-
-    max_sequence_len = max([longest_sequence(train_sequences),
-                            longest_sequence(test_sequences)])
-    train_sequences, train_sequences_lengths = pad_sequences(train_sequences, max_sequence_len, atom_to_one_hot[PAD_TOKEN])
-    test_sequences, test_sequences_lengths = pad_sequences(test_sequences, max_sequence_len, atom_to_one_hot[PAD_TOKEN])
-
-    train_sequences, train_sequences_lengths = zip(*reversed(sorted(zip(train_sequences,
-                                                                        train_sequences_lengths),
-                                                   key=lambda t: t[1])))
-    test_sequences, test_sequences_lengths = zip(*reversed(sorted(zip(test_sequences,
-                                                                      test_sequences_lengths),
-                                                 key=lambda t: t[1])))
-
-    return (atom_to_one_hot,
-            one_hot_to_atom,
-            torch.tensor(np.array(train_sequences)).long(),
-            torch.tensor(np.array(train_sequences_lengths)).long(),
-            torch.tensor(np.array(test_sequences)).long(),
-            torch.tensor(np.array(test_sequences_lengths)).long())
-
-
-def generate_description_sequences_from_dataframe(train_dataframe,
-                                                  test_dataframe,
-                                                  dictionary_encoder,
-                                                  sequence_encoder):
-    train_dataframe, test_dataframe = utils.dataframe.remap_columns_with_transform(
-        train_dataframe,
-        test_dataframe,
+def generate_description_sequences_from_dataframe(dictionary_encoder,
+                                                  sequence_encoder,
+                                                  *dataframes):
+    train_dataframe, test_dataframe = remap_columns_with_transform(
         'description',
         'clean_description',
-        utils.dataframe.normalize_description
+        normalize_description
     )
 
-    return generate_description_sequences(train_dataframe['clean_description'],
-                                          test_datframe['clean_description'],
-                                          dictionary_encoder,
-                                          sequence_encoder)
+    return generate_description_sequences(dictionary_encoder,
+                                          sequence_encoder,
+                                          [df['clean_description'] for df in dataframes])
 
 
 def generate_bigrams(x):

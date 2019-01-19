@@ -37,12 +37,12 @@ def bert_featurize_data_frame(data_frame, max_len, tokenizer):
                                         max_len,
                                         tokenizer)
 
-def bert_featurize_data_frames(train_dataframe, test_dataframe):
+def bert_featurize_data_frames(*dataframes):
     tokenizer = BertTokenizer.from_pretrained(BERT_MODEL, do_lower_case=True)
 
     return (
-        list(bert_featurize_data_frame(train_dataframe, 100, tokenizer)),
-        list(bert_featurize_data_frame(test_dataframe, 100, tokenizer))
+        list(bert_featurize_data_frame(df, 100, tokenizer))
+        for df in dataframes
     )
 
 
