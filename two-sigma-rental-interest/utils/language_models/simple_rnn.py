@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import safe_indexing
 from skorch.classifier import NeuralNetClassifier
-from skorch.callbacks import EpochScoring, ProgressBar
+from skorch.callbacks import Callback, EpochScoring, ProgressBar
 from skorch.dataset import Dataset, get_len
 from utils.model import sklearn_pipeline_steps
 from utils.language_models.descriptions import (
