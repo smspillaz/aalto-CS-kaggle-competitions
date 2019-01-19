@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -155,3 +156,16 @@ class NoToTensorInLossClassifier(NeuralNetClassifier):
         # print(torch.max(y_pred, dim=1)[1], y_true)
         return self.criterion_(y_pred, y_true)
 
+    def predict_proba(self, X):
+        """Exponentiate the predicted probabilities.
+
+        I don't know why the base model doesn't do this, especially
+        since the base loss function is NLLLoss.
+        """
+        return np.exp(super().predict_proba(X))
+
+
+class LRAnnealing(Callback):
+    def on_epoch_end(self, net, **kwargs):
+        if not net.history[-1]['valid_loss_best']:
+            net.lr /= 4.0
