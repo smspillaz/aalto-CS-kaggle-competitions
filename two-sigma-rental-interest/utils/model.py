@@ -132,24 +132,53 @@ def test_model_with_k_fold_cross_validation(model,
     )
 
 
-def get_prediction_probabilities_with_columns(model,
-                                              test_dataframe,
-                                              keep_columns):
-    return pd.concat((test_dataframe[keep_columns],
-                      pd.DataFrame(model.predict_proba(test_dataframe.drop(keep_columns, axis=1)))),
+def get_prediction_probabilities_with_columns_from_predictions(listing_ids,
+                                                               predictions):
+    return pd.concat((pd.DataFrame(listing_ids, columns=['listing_id']),
+                      pd.DataFrame(predictions, columns=('high', 'medium', 'low'))),
                      axis=1)
+
+
+def get_prediction_probabilities_with_columns(model, listing_ids, test_data):
+    predictions = model.predict_proba(test_data)
+    return get_prediction_probabilities_with_columns_from_predictions(listing_ids,
+                                                                      predictions)
+
+
+def write_predictions_table_to_csv(predictions_table, csv_path):
+    predictions_table.to_csv(csv_path, columns=['listing_id', 'high', 'medium', 'low'], index=False)
+
+
+def split_into_continuous_and_categorical(features_train_dataframe,
+                                          features_test_dataframe,
+                                          categorical_columns):
+    return (
+        features_train_dataframe.drop(['listing_id',
+                                       'label_interest_level'] + categorical_columns,
+                                      axis=1).values,
+        features_train_dataframe[categorical_columns].values,
+        features_test_dataframe.drop(['listing_id',
+                                      'label_interest_level'] + categorical_columns,
+                                     axis=1).values,
+        features_test_dataframe[categorical_columns].values
+    )
 
 
 def rescale_features_and_split_into_continuous_and_categorical(features_train_dataframe,
                                                                features_test_dataframe,
                                                                categorical_columns):
+    (train_continuous,
+     train_categorical,
+     test_continuous,
+     test_categorical) = split_into_continuous_and_categorical(features_train_dataframe,
+                                                               features_test_dataframe,
+                                                               categorical_columns)
+
+    scaler = StandardScaler()
+
     return (
-        StandardScaler().fit_transform(features_train_dataframe.drop(['listing_id',
-                                                                      'label_interest_level'] + categorical_columns,
-                                                                     axis=1)),
-        features_train_dataframe[categorical_columns],
-        StandardScaler().fit_transform(features_test_dataframe.drop(['listing_id',
-                                                                     'label_interest_level'] + categorical_columns,
-                                                                     axis=1)),
-        features_test_dataframe[categorical_columns]
+        scaler.fit_transform(train_continuous),
+        train_categorical,
+        scaler.fit_transform(test_continuous),
+        test_categorical
     )
