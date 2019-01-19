@@ -4,6 +4,8 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
+from fastai.text import Tokenizer, SpacyTokenizer
+from torchtext import data
 
 
 PAD_TOKEN = '<PAD>'
@@ -163,3 +165,27 @@ def generate_description_sequences_from_dataframe(train_dataframe,
                                           test_datframe['clean_description'],
                                           dictionary_encoder,
                                           sequence_encoder)
+
+
+def generate_bigrams(x):
+    n_grams = set(zip(*[x[i:] for i in range(2)]))
+    for n_gram in n_grams:
+        x.append(' '.join(n_gram))
+    return x
+
+
+def torchtext_create_text_vocab(texts, vectors=None, preprocessing=None):
+    text = data.Field(tokenize='spacy', preprocessing=preprocessing)
+
+    text.build_vocab(texts, vectors=vectors)
+    return text
+
+
+def torchtext_process_df_texts(*dataframes, text=None, field=None):
+    assert field is not None
+    assert text is not None
+    return tuple(
+        text.process(list(df[field])).transpose(0, 1)
+        for df in dataframes
+    )
+
