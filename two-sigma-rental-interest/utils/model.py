@@ -11,6 +11,7 @@ algorithms for hyperparameter search if we want to.
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 
 from category_encoders import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
@@ -36,6 +37,24 @@ def basic_logistic_regression_pipeline(categorical_columns,
         ('logistic', LogisticRegression(multi_class='multinomial',
                                         solver='newton-cg'))
     ))
+
+
+def basic_xgboost_pipeline(categorical_columns,
+                           verbose=False,
+                           n_estimators=1000,
+                           subsample=0.8,
+                           colsample_bytree=0.8,
+                           **kwargs):
+    return Pipeline([
+        ('xgb', xgb.XGBClassifier(
+            n_estimators=n_estimators,
+            seed=42,
+            objective='multi:softprob',
+            subsample=0.8,
+            colsample_bytree=0.8,
+            **kwargs
+        ))
+    ])
 
 
 def calculate_statistics(statistics, test_labels, predictions):
