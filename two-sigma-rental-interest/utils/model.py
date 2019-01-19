@@ -13,21 +13,32 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
-from category_encoders import OneHotEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 from sklearn.preprocessing import StandardScaler
 
 
+def expand_onehot_encoding(dataframe, categorical_columns):
+    for column in categorical_columns:
+        encoding_mat = OneHotEncoder().fit_transform(dataframe[column].values.reshape(-1, 1)).todense()
+        encoded = pd.DataFrame(encoding_mat,
+                               columns=['{}_{}'.format(column, i) for i in range(max(dataframe[column].values) + 1)])
+        dataframe = pd.concat((
+            dataframe.drop(column, axis=1),
+            encoded
+        ), axis=1)
+
+    return dataframe
+
+
 def sklearn_pipeline_steps(categorical_columns, verbose=False):
-    return (
-        ('one_hot',
-         OneHotEncoder(cols=categorical_columns, verbose=verbose)),
+    return [
         ('scaling', StandardScaler())
-    )
+    ]
 
 
 def basic_logistic_regression_pipeline(categorical_columns,
