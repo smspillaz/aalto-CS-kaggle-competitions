@@ -44,6 +44,7 @@ class SimpleRNNPredictor(nn.Module):
                            batch_first=True,
                            dropout=self.dropout)
 
+        self.decoder = nn.Linear(hidden_dimension * 2 * layers, output_dimension)
         self.class_decoder1 = nn.Linear(hidden_dimension * 2 * layers,
                                         128)
         self.class_decoder2 = nn.Linear(128, 128)
@@ -68,10 +69,10 @@ class SimpleRNNPredictor(nn.Module):
         _, (hidden, cell_state) = self.rnn(padded, (hidden, cell_state))
 
         hidden = hidden.view(hidden.shape[1], hidden.shape[2] * 2 * self.n_layers)
-        decoded = F.dropout(F.relu(self.class_decoder1(hidden)), 0.05)
-        decoded = F.dropout(F.relu(self.class_decoder2(decoded)), 0.05)
-        decoded = self.class_decoder3(decoded)
-        return F.log_softmax(decoded, dim=-1)
+        #decoded = F.dropout(F.sigmoid(self.class_decoder1(hidden)), self.dropout)
+        #decoded = F.dropout(F.sigmoid(self.class_decoder2(decoded)), self.dropout)
+        #decoded = self.class_decoder3(decoded)
+        return F.log_softmax(F.dropout(self.decoder(hidden), self.dropout), dim=-1)
 
 
 class SimpleRNNTabularDataPredictor(nn.Module):
