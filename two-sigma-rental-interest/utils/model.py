@@ -91,7 +91,8 @@ def fit_one_split(model, features, labels, statistics, train_index, test_index):
     test_data, test_labels = features.iloc[test_index], labels[test_index]
 
     model.fit(train_data, train_labels)
-    predictions = model.predict(test_data)
+    predictions = model.predict_proba(pd.DataFrame(test_data, columns=features.columns))
+
     return (
         test_labels,
         predictions,
