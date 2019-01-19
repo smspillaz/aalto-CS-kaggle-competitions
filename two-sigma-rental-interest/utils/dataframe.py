@@ -121,10 +121,10 @@ def map_categorical_column_to_category_ids(train_data_frame,
     }
     category_to_id_map = {
         category: i
-        for i, category in enumerate(sorted([
+        for i, category in enumerate(sorted(set([
             category_to_unknown_mapping[c] for c in
             (set(train_data_frame[column]) | set(test_data_frame[column]))
-        ]))
+        ])))
     }
     id_to_category_map = {
         i: category
