@@ -108,8 +108,8 @@ class BertForSequenceClassification(PreTrainedBertModel):
 
     def forward(self, X):
         (input_ids,
-         token_type_ids,
-         attention_mask) = tuple(maybe_cuda(t) for t in X)
+         attention_mask,
+         token_type_ids) = tuple(maybe_cuda(t) for t in X)
 
         _, pooled_output = self.bert(input_ids, token_type_ids, attention_mask, output_all_encoded_layers=False)
         features = pooled_output
@@ -193,8 +193,8 @@ class BertForSequenceClassificationWithTabularData(PreTrainedBertModel):
 
     def forward(self, X):
         (input_ids,
-         token_type_ids,
          attention_mask,
+         token_type_ids,
          input_features_categorical,
          input_features_continuous) = tuple(maybe_cuda(t) for t in X)
 
