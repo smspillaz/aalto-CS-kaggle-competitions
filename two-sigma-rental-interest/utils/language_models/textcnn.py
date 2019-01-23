@@ -17,13 +17,6 @@ class TextCNN(nn.Module):
 
         self.dropout = dropout
         self.embedding = nn.Embedding(dictionary_dimension, encoder_dimension)
-        total_embeddings_dimension = sum([e for _, e in categorical_feature_embedding_dimensions])
-        self.categorical_feature_embeddings = [
-            nn.Embedding(*categorical_feature_embedding_dimensions[f])
-            for f in range(len(categorical_feature_embedding_dimensions))
-        ]
-        for i, embedding in enumerate(self.categorical_feature_embeddings):
-            self.add_module('emb_{}'.format(i), embedding)
         self.conv_0 = nn.Conv2d(in_channels=1, out_channels=n_filters, kernel_size=(filter_sizes[0], encoder_dimension))
         self.conv_1 = nn.Conv2d(in_channels=1, out_channels=n_filters, kernel_size=(filter_sizes[1], encoder_dimension))
         self.conv_2 = nn.Conv2d(in_channels=1, out_channels=n_filters, kernel_size=(filter_sizes[2], encoder_dimension))
