@@ -107,10 +107,13 @@ def pad_sequences(sequences, max_len, pad_token):
     ], np.array([len(s) for s in sequences])
 
 
-def token_dictionary_seq_encoder(*sequences):
+def tokenize_sequences(*sequences):
     tokenizer = Tokenizer(tok_func=SpacyTokenizer)
+    return [tokenizer.process_all(s) for s in sequences]
 
-    tokenized_sequences = [tokenizer.process_all(s) for s in sequences]
+
+def token_dictionary_seq_encoder(*sequences):
+    tokenized_sequences = tokenize_sequences(*sequences)
 
     tokens_to_one_hot, one_hot_to_tokens = tokens_to_one_hot_lookups(
         list(itertools.chain.from_iterable(itertools.chain.from_iterable(tokenized_sequences)))
@@ -172,18 +175,43 @@ def generate_bigrams(x):
     return x
 
 
-def torchtext_create_text_vocab(texts, vectors=None, preprocessing=None):
-    text = data.Field(tokenize='spacy', preprocessing=preprocessing)
+def postprocess_sequences(*sequences, postprocessing=None):
+    if not postprocessing:
+        return sequences
 
-    text.build_vocab(texts, vectors=vectors)
+    return tuple(
+        [postprocessing(sequence) for sequence in collection]
+        for collection in sequences
+    )
+
+
+def insert_average_vectors(vocab):
+    zeros = np.zeros(vocab.vectors.shape[1])
+    vectors_np = vocab.vectors.numpy()
+    zeros_idx = np.array([
+        np.all(row == zeros)
+        for row in vectors_np
+    ])
+    average = vectors_np[~zeros_idx].mean(axis=0)
+    vectors_np[zeros_idx] = average
+    vocab.vectors = torch.tensor(vectors_np)
+
+
+def torchtext_create_text_vocab(*sequences, vectors=None):
+    text = data.Field(tokenize='spacy')
+
+    text.build_vocab(sequences)
+    text.vocab.load_vectors(vectors)
+
+    insert_average_vectors(text.vocab)
+
     return text
 
 
-def torchtext_process_df_texts(*dataframes, text=None, field=None):
-    assert field is not None
+def torchtext_process_texts(*sequences, text=None):
     assert text is not None
     return tuple(
-        text.process(list(df[field])).transpose(0, 1)
-        for df in dataframes
+        text.process(seq).transpose(0, 1)
+        for seq in sequences
     )
 
