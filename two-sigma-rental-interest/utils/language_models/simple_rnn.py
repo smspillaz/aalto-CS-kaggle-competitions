@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils import safe_indexing
 from skorch.classifier import NeuralNetClassifier
-from skorch.callbacks import Callback, EpochScoring, ProgressBar
+from skorch.callbacks import Callback, Checkpoint, EpochScoring, ProgressBar
 from skorch.dataset import Dataset, get_len
 from utils.model import sklearn_pipeline_steps
 from utils.language_models.descriptions import (
@@ -174,3 +174,14 @@ class LRAnnealing(Callback):
     def on_epoch_end(self, net, **kwargs):
         if not net.history[-1]['valid_loss_best']:
             net.lr /= 4.0
+
+
+class CheckpointAndKeepBest(Checkpoint):
+    def on_train_end(self, net, **kwargs):
+        for i, v in enumerate(net.history[:, self.event_name]):
+            if v:
+                idx = i
+
+        print('Loading parameters from checkpoint {}'.format(idx))
+        net.load_params(checkpoint=self)
+
