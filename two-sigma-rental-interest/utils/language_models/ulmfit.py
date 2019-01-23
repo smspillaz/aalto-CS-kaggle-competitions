@@ -5,6 +5,7 @@ from utils.dataframe import random_oversample_dataframe
 
 
 def load_ulmfit_classifier_with_transfer_learning_from_data_frame(training_dataframe,
+                                                                  validation_dataframe,
                                                                   test_dataframe,
                                                                   vocab,
                                                                   path,
@@ -19,15 +20,10 @@ def load_ulmfit_classifier_with_transfer_learning_from_data_frame(training_dataf
     """
     bs = 48
 
-    # Make sure that the classes are balanced by oversampling the text data.
-    split_training_dataframe, split_validation_dataframe = train_test_split(training_dataframe,
-                                                                            stratify=training_dataframe["label_interest_level"],
-                                                                            test_size=0.1)
-
     data_clas = TextDataBunch.from_df(path=path,
-                                      train_df=random_oversample_dataframe(split_training_dataframe),
+                                      train_df=training_dataframe,
                                       test_df=test_dataframe,
-                                      valid_df=split_validation_dataframe,
+                                      valid_df=validation_dataframe,
                                       text_cols=['clean_description'],
                                       label_cols=['label_interest_level'],
                                       bs=bs,
