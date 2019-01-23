@@ -25,6 +25,21 @@ def train_test_split_indices_maintain_relative_ordering(indices, probability_tes
     return training_set, test_set
 
 
+def shuffled_train_test_split_by_indices(proportion):
+    def _inner(dataset, y=None, groups=None):
+        idx_train, idx_test = train_test_split_indices_maintain_relative_ordering(list(range(0, len(dataset))),
+                                                                                  proportion)
+        np.random.shuffle(idx_train)
+        np.random.shuffle(idx_test)
+
+        return (
+            torch.utils.data.Subset(dataset, idx_train),
+            torch.utils.data.Subset(dataset, idx_test)
+        )
+
+    return _inner
+
+
 def simple_train_test_split_without_shuffle_func(proportion):
     """We need this override here to split without shuffling.
 
