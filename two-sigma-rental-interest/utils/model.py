@@ -24,10 +24,10 @@ from sklearn.preprocessing import StandardScaler
 
 
 def expand_onehot_encoding(dataframe, categorical_columns):
-    for column in categorical_columns:
-        encoding_mat = OneHotEncoder().fit_transform(dataframe[column].values.reshape(-1, 1)).todense()
+    for column, dimension in categorical_columns.items():
+        encoding_mat = OneHotEncoder(n_values=dimension).fit_transform(dataframe[column].values.reshape(-1, 1)).todense()
         encoded = pd.DataFrame(encoding_mat,
-                               columns=['{}_{}'.format(column, i) for i in range(max(dataframe[column].values) + 1)])
+                               columns=['{}_{}'.format(column, i) for i in range(dimension)])
         dataframe = pd.concat((
             dataframe.drop(column, axis=1),
             encoded
@@ -152,8 +152,8 @@ def write_predictions_table_to_csv(predictions_table, csv_path):
 
 def split_into_continuous_and_categorical(categorical_columns, *dataframes):
     return tuple([
-        (df.drop(['listing_id', 'label_interest_level'] + categorical_columns, axis=1).values,
-         df[categorical_columns].values)
+        (df.drop(['listing_id', 'label_interest_level'] + list(categorical_columns.keys()), axis=1).values,
+         df[list(categorical_columns.keys())].values)
         for df in dataframes
     ])
 
