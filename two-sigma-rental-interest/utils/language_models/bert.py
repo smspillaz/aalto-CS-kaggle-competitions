@@ -245,7 +245,7 @@ class BertClassifier(NeuralNetClassifier):
         self._training_step = 0
         self._global_training_step = 0
         self._total_training_steps = num_train_steps
-        self._num_labels = num_labels
+        self.num_labels = num_labels
         self._batch_step = 0
 
     def set_total_training_steps(self, total_training_steps):
