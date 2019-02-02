@@ -15,7 +15,17 @@ import pandas as pd
 import xgboost as xgb
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, mean_squared_error
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    AdaBoostClassifier,
+    ExtraTreesClassifier
+)
+from sklearn.metrics import (
+    accuracy_score,
+    make_scorer,
+    mean_squared_error,
+    log_loss
+)
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
