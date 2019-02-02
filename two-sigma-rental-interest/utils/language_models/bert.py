@@ -304,6 +304,11 @@ class BertClassifier(NeuralNetClassifier):
         args = [optimizer_parameters]
         return args, kwargs
 
+    def _get_param_names(self):
+        """Exclude params that start with an underscore, they are private."""
+        return [k for k in super()._get_param_names()
+                if not k.startswith('_') and k != "optimizer__t_total"]
+
     def predict_proba(self, X):
         """Exponentiate the predicted probabilities.
 
