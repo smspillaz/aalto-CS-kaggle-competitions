@@ -317,3 +317,27 @@ class BertClassifier(NeuralNetClassifier):
         """
         return np.exp(super().predict_proba(X))
 
+
+class TensorTuple(object):
+    """A workaround for tuples of tensors and cross-validation."""
+    def __init__(self, tup):
+        super().__init__()
+        self.tup = tup
+        self.shape = (len(self), )
+
+    def __len__(self):
+        return len(self.tup[0])
+
+    def __getitem__(self, key):
+        if hasattr(key, 'shape'):
+            # If we get an index, index row-wise,
+            # eg, stack together a new set of tensors
+            # from each element in our tuple
+            return tuple(
+                x[key] for x in self.tup
+            )
+
+        # Default behaviour, just index into the tuple
+        # eg columnwise
+        return self.tup[key]
+
