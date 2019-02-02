@@ -171,6 +171,26 @@ def split_into_continuous_and_categorical(categorical_columns, *dataframes):
     ])
 
 
+def check_if_any_nan(rescaled_continuous_data):
+    """Throws an exception if any components of a datapoint are NaN."""
+    if rescaled_continuous_data[np.isnan(rescaled_continuous_data)].size != 0:
+        raise RuntimeError("""Some elements of array are NaN.""")
+
+
+def rescale_non_categorical_data(dataframe, categorical_features):
+    features_columns = [c for c in dataframe.columns if c.startswith("features_")]
+    features_data = dataframe[features_columns].reset_index(drop=True)
+    categorical_data = dataframe[list(categorical_features.keys())].reset_index(drop=True)
+    continuous_data = dataframe.drop(list(categorical_features.keys()) + features_columns, axis=1)
+
+    # Now, rescale the values and create a new dataframe
+    rescaled_continuous_data = StandardScaler().fit_transform(continuous_data.values)
+    check_if_any_nan(rescaled_continuous_data)
+
+    return pd.DataFrame(np.hstack((rescaled_continuous_data, categorical_data.values, features_data.values)),
+                        columns=list(continuous_data.columns) + list(categorical_data.columns) + features_columns)
+
+
 def rescale_features_and_split_into_continuous_and_categorical(categorical_columns,
                                                                *dataframes):
     split_dfs = split_into_continuous_and_categorical(categorical_columns, *dataframes)
