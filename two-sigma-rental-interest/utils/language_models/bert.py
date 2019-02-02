@@ -286,8 +286,8 @@ class BertClassifier(NeuralNetClassifier):
         implemented.
         """
         # print(torch.max(y_pred, dim=1)[1], y_true)
-        return self.criterion_(y_pred.view(-1, self._num_labels),
-                               y_true.view(-1)) / GRADIENT_ACCUMULATION_STEPS
+        return self.criterion_(y_pred.view(-1, self.num_labels),
+                               y_true.view(-1).to(self.device)) / GRADIENT_ACCUMULATION_STEPS
 
     def _get_params_for_optimizer(self, prefix, named_parameters):
         """We have our own logic here for getting params.
