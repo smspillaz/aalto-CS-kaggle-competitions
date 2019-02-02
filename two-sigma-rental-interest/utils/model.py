@@ -27,15 +27,18 @@ from sklearn.metrics import (
     log_loss
 )
 from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import KFold
+from sklearn.model_selection import GridSearchCV, KFold, StratifiedKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+
+from utils.report import generate_classification_report_from_preds
 
 
 def expand_onehot_encoding(dataframe, categorical_columns):
     for column, dimension in categorical_columns.items():
-        encoding_mat = OneHotEncoder(n_values=dimension).fit_transform(dataframe[column].values.reshape(-1, 1)).todense()
+        encoding_mat = OneHotEncoder(categories=[range(dimension)]).fit_transform(dataframe[column].values.reshape(-1, 1)).todense()
         encoded = pd.DataFrame(encoding_mat,
                                columns=['{}_{}'.format(column, i) for i in range(dimension)])
         dataframe = pd.concat((
