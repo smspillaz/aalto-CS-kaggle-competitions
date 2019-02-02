@@ -57,29 +57,158 @@ def sklearn_pipeline_steps(categorical_columns, verbose=False):
 
 def basic_logistic_regression_pipeline(categorical_columns,
                                        verbose=False):
-    return Pipeline((
-        *sklearn_pipeline_steps(categorical_columns, verbose=verbose),
-        ('logistic', LogisticRegression(multi_class='multinomial',
-                                        solver='newton-cg'))
-    ))
+    return LogisticRegression(multi_class='multinomial', solver='newton-cg')
 
 
-def basic_xgboost_pipeline(categorical_columns,
+def basic_random_forest_pipeline(featurized_train_data,
+                                 train_labels,
+                                 verbose=False,
+                                 param_grid_optimal=None,
+                                 **kwargs):
+    pipeline = RandomForestClassifier(
+        random_state=42,
+        **kwargs
+    )
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'bootstrap': [True, False],
+        'max_depth': [3, 5],
+        'min_samples_leaf': [1, 2, 4],
+        'n_estimators': [100, 150, 200, 250]
+    }
+    search = GridSearchCV(pipeline,
+                          param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
+
+
+def basic_xgboost_pipeline(featurized_train_data,
+                           train_labels,
                            verbose=False,
-                           n_estimators=1000,
-                           subsample=0.8,
-                           colsample_bytree=0.8,
+                           train_param_grid_optimal=None,
                            **kwargs):
-    return Pipeline([
-        ('xgb', xgb.XGBClassifier(
-            n_estimators=n_estimators,
-            seed=42,
-            objective='multi:softprob',
-            subsample=0.8,
-            colsample_bytree=0.8,
-            **kwargs
-        ))
-    ])
+    pipeline = xgb.XGBClassifier(
+        seed=42,
+        objective='multi:softprob',
+        **kwargs
+    )
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'min_child_weight': [1, 5],
+        'gamma': [0.5, 1, 1.5, 2],
+        'subsample': [0.6, 0.8],
+        'colsample_bytree': [0.6, 0.8, 1.0],
+        'max_depth': [3, 5],
+        'n_estimators': [100, 150, 200]
+    }
+    search = GridSearchCV(pipeline,
+                          train_param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
+
+
+def basic_extratrees_pipeline(featurized_train_data,
+                              train_labels,
+                              verbose=False,
+                              param_grid_optimal=None,
+                              **kwargs):
+    pipeline = ExtraTreesClassifier(
+        random_state=42,
+        **kwargs
+    )
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'bootstrap': [True, False],
+        'max_depth': [3, 5],
+        'min_samples_leaf': [1, 2, 4],
+        'n_estimators': [100, 150, 200, 250]
+    }
+    search = GridSearchCV(pipeline,
+                          param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
+
+
+def basic_adaboost_pipeline(featurized_train_data,
+                            train_labels,
+                            verbose=False,
+                            param_grid_optimal=None,
+                            **kwargs):
+    pipeline = AdaBoostClassifier(
+        random_state=42,
+        **kwargs
+    )
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'learning_rate': [10e-2, 10e-1, 1, 2, 5],
+        'n_estimators': [100, 150, 200, 250]
+    }
+    search = GridSearchCV(pipeline,
+                          param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
+
+
+def basic_svc_pipeline(featurized_train_data,
+                       train_labels,
+                       verbose=False,
+                       param_grid_optimal=None,
+                       **kwargs):
+    pipeline = SVC(
+        random_state=42,
+        probability=True,
+        **kwargs
+    )
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'C': [0.1, 1.0],
+        'gamma': ['auto', 'scale'],
+        'kernel': ['linear', 'rbf', 'poly'],
+    }
+    search = GridSearchCV(pipeline,
+                          param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
 
 
 def calculate_statistics(statistics, test_labels, predictions):
