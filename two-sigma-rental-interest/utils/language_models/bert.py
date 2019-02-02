@@ -37,8 +37,8 @@ def bert_featurize_data_frame(data_frame, max_len, tokenizer):
                                         max_len,
                                         tokenizer)
 
-def bert_featurize_data_frames(*dataframes):
-    tokenizer = BertTokenizer.from_pretrained(BERT_MODEL, do_lower_case=True)
+def bert_featurize_data_frames(bert_model, *dataframes):
+    tokenizer = BertTokenizer.from_pretrained(bert_model, do_lower_case=True)
 
     return (
         list(bert_featurize_data_frame(df, 100, tokenizer))
@@ -119,9 +119,9 @@ class BertForSequenceClassification(PreTrainedBertModel):
         return F.log_softmax(logits, dim=-1)
 
 
-def create_bert_model(num_labels):
+def create_bert_model(bert_model, num_labels):
     return BertForSequenceClassification.from_pretrained(
-        BERT_MODEL,
+        bert_model,
         num_labels=num_labels
     )
 
@@ -213,11 +213,12 @@ class BertForSequenceClassificationWithTabularData(PreTrainedBertModel):
         return F.log_softmax(logits, dim=-1)
 
 
-def create_bert_model_with_tabular_features(continuous_features_dimension,
+def create_bert_model_with_tabular_features(bert_model,
+                                            continuous_features_dimension,
                                             categorical_feature_embedding_dimensions,
                                             num_labels):
     return BertForSequenceClassificationWithTabularData.from_pretrained(
-        BERT_MODEL,
+        bert_model,
         continuous_features_dimension=continuous_features_dimension,
         categorical_feature_embedding_dimensions=categorical_feature_embedding_dimensions,
         num_labels=num_labels
