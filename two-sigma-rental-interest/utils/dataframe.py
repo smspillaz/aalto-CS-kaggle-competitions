@@ -104,7 +104,7 @@ def remap_date_column_to_days_before(data_frame,
                                      new_column,
                                      reference_date):
     data_frame[new_column] = data_frame[column].transform(
-        lambda x: (reference_date - datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S")).days
+        lambda x: (reference_date - datetime.datetime.strptime(str(x), "%Y-%m-%d %H:%M:%S")).days
     )
     return data_frame
 
