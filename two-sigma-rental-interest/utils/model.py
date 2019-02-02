@@ -14,6 +14,8 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 
+from IPython.display import display
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import (
     RandomForestClassifier,
@@ -322,11 +324,56 @@ def rescale_non_categorical_data(dataframe, categorical_features):
 
 def rescale_features_and_split_into_continuous_and_categorical(categorical_columns,
                                                                *dataframes):
-    split_dfs = split_into_continuous_and_categorical(categorical_columns, *dataframes)
-    scaler = StandardScaler()
+    rescaled_dataframes = tuple([rescale_non_categorical_data(df, categorical_columns) for df in dataframes])
+    return split_into_continuous_and_categorical(categorical_columns, *rescaled_dataframes)
 
-    return tuple([
-        (scaler.fit_transform(continuous), categorical)
-        for continuous, categorical in split_dfs
-    ])
+
+def train_model_and_get_validation_and_test_set_predictions(
+    train_dataframe,
+    validation_dataframe,
+    test_dataframe,
+    raw_validation_dataframe,
+    train_labels,
+    validation_labels,
+    featurizer,
+    model_training_func,
+    model_prediction_func,
+    train_param_grid_optimal=None
+):
+    (data_info,
+     (featurized_train_data,
+      featurized_validation_data,
+      featurized_test_data)) = featurizer(train_dataframe,
+                                          validation_dataframe,
+                                          test_dataframe)
+
+    model = model_training_func(data_info,
+                                featurized_train_data,
+                                featurized_validation_data,
+                                train_labels,
+                                validation_labels,
+                                train_param_grid_optimal=train_param_grid_optimal)
+    validation_preds, validation_probabilities = model_prediction_func(
+        model,
+        featurized_validation_data
+    )
+    report = generate_classification_report_from_preds(validation_preds,
+                                                       validation_probabilities,
+                                                       raw_validation_dataframe,
+                                                       validation_labels,
+                                                       [0, 1, 2],
+                                                       columns=['description'])
+    display(report)
+
+    test_preds, test_probabilities = model_prediction_func(
+        model,
+        featurized_test_data
+    )
+
+    return validation_probabilities, test_probabilities
+
+
+def predict_with_sklearn_estimator(model, data):
+    return model.predict(data), model.predict_proba(data)
+
 
