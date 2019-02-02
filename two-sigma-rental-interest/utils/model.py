@@ -57,7 +57,9 @@ def sklearn_pipeline_steps(categorical_columns, verbose=False):
     ]
 
 
-def basic_logistic_regression_pipeline(categorical_columns,
+def basic_logistic_regression_pipeline(featurized_train_data,
+                                       train_labels,
+                                       categorical_columns,
                                        verbose=False,
                                        param_grid_optimal=None):
     pipeline = LogisticRegression(multi_class='multinomial', solver='newton-cg')
