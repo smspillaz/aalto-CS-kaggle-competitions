@@ -195,8 +195,8 @@ class BertForSequenceClassificationWithTabularData(PreTrainedBertModel):
         (input_ids,
          attention_mask,
          token_type_ids,
-         input_features_categorical,
-         input_features_continuous) = tuple(maybe_cuda(t) for t in X)
+         input_features_continuous,
+         input_features_categorical) = tuple(maybe_cuda(t) for t in X)
 
         # Separate out the categorical and continuous features, passing
         # each category through its own embedding
