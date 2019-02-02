@@ -234,7 +234,13 @@ def warmup_linear(x, warmup=0.002):
 class BertClassifier(NeuralNetClassifier):
     """A simple override of NeuralNetClassifier."""
 
-    def __init__(self, *args, num_train_steps=1, num_labels=0, **kwargs):
+    def __init__(self, *args, len_train_data=100, num_labels=0, **kwargs):
+        batch_size = kwargs.get("batch_size", 16)
+        epochs = kwargs.get("max_epochs", 3)
+        num_train_steps = len_train_data / batch_size / GRADIENT_ACCUMULATION_STEPS * epochs
+
+        kwargs["optimizer__t_total"] = num_train_steps
+
         super().__init__(*args, **kwargs)
         self._training_step = 0
         self._global_training_step = 0
