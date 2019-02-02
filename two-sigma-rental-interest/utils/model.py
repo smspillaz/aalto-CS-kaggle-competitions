@@ -58,8 +58,27 @@ def sklearn_pipeline_steps(categorical_columns, verbose=False):
 
 
 def basic_logistic_regression_pipeline(categorical_columns,
-                                       verbose=False):
-    return LogisticRegression(multi_class='multinomial', solver='newton-cg')
+                                       verbose=False,
+                                       param_grid_optimal=None):
+    pipeline = LogisticRegression(multi_class='multinomial', solver='newton-cg')
+
+    # Grid search if we don't get an optimal parameter grid
+    param_grid = {
+        'C': [1.0, 2.0, 5.0, 10.0],
+        'class_weight': [None, 'balanced'],
+        'penalty': ['l2']
+    }
+    search = GridSearchCV(pipeline,
+                          param_grid_optimal or param_grid,
+                          cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
+                                                                             train_labels),
+                          refit=True,
+                          verbose=50,
+                          n_jobs=8,
+                          scoring=make_scorer(log_loss,
+                                              greater_is_better=False,
+                                              needs_proba=True))
+    return search
 
 
 def basic_random_forest_pipeline(featurized_train_data,
