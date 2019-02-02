@@ -300,3 +300,13 @@ def drop_columns_from_dataframes(drop_columns, *dataframes):
         for df in dataframes
     )
 
+
+def remove_outliers(dataframe, column_quantile_dict):
+    """Remove anything with price above a certain quantile."""
+    for column, (quantile_min, quantile_max) in column_quantile_dict.items():
+        q_max = dataframe[column].quantile(quantile_max)
+        q_min = dataframe[column].quantile(quantile_min)
+        dataframe = dataframe[dataframe[column] < q_max]
+        dataframe = dataframe[dataframe[column] > q_min]
+    return dataframe.reset_index(drop=True)
+
