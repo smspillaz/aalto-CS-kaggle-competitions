@@ -116,7 +116,7 @@ def basic_random_forest_pipeline(featurized_train_data,
 def basic_xgboost_pipeline(featurized_train_data,
                            train_labels,
                            verbose=False,
-                           train_param_grid_optimal=None,
+                           param_grid_optimal=None,
                            **kwargs):
     pipeline = xgb.XGBClassifier(
         seed=42,
@@ -134,7 +134,7 @@ def basic_xgboost_pipeline(featurized_train_data,
         'n_estimators': [100, 150, 200]
     }
     search = GridSearchCV(pipeline,
-                          train_param_grid_optimal or param_grid,
+                          param_grid_optimal or param_grid,
                           cv=StratifiedKFold(n_splits=2, shuffle=True).split(featurized_train_data,
                                                                              train_labels),
                           refit=True,
