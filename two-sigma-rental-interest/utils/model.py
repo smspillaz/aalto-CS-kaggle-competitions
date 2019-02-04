@@ -330,7 +330,7 @@ def check_if_any_nan(rescaled_continuous_data):
 
 
 def rescale_non_categorical_data(dataframe, categorical_features):
-    features_columns = [c for c in dataframe.columns if c.startswith("features_")]
+    features_columns = [c for c in dataframe.columns if str(c).startswith("features_")]
     features_data = dataframe[features_columns].reset_index(drop=True)
     categorical_data = dataframe[list(categorical_features.keys())].reset_index(drop=True)
     continuous_data = dataframe.drop(list(categorical_features.keys()) + features_columns, axis=1)
